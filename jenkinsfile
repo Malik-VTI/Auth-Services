@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        APP_NAME = 'services-auth'
+        APP_NAME = 'services-authentication'
         SERVICE_FILE = "/etc/systemd/system/${APP_NAME}.service"
     }
 
