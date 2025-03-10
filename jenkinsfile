@@ -1,0 +1,66 @@
+pipeline {
+    agent any
+
+    environment {
+        APP_NAME = 'services-auth'
+        SERVICE_FILE = "/etc/systemd/system/${APP_NAME}.service"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build') {
+            steps {
+                script {
+                    sh 'go build -o ${APP_NAME}'
+                }
+            }
+        }
+
+        stage('Test') {
+            steps {
+                script {
+                    sh 'go test ./...'
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                script {
+                    sh """
+                    sudo mv ${APP_NAME} /usr/local/bin/${APP_NAME}
+                    echo "[Unit]
+                    Description=${APP_NAME} service
+
+                    [Service]
+                    ExecStart=/usr/local/bin/${APP_NAME}
+                    Restart=always
+                    User=nobody
+                    Group=nogroup
+                    Environment=PATH=/usr/bin:/usr/local/bin
+                    Environment=GO_ENV=production
+                    WorkingDirectory=/usr/local/bin
+
+                    [Install]
+                    WantedBy=multi-user.target" | sudo tee ${SERVICE_FILE}
+
+                    sudo systemctl daemon-reload
+                    sudo systemctl enable ${APP_NAME}
+                    sudo systemctl start ${APP_NAME}
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
+        }
+    }
+}
