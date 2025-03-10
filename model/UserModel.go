@@ -2,6 +2,7 @@ package model
 
 import "gorm.io/gorm"
 
+//model
 type User struct {
 	gorm.Model
 	Username string  `json:"username" gorm:"size:255;unique;not null"`
