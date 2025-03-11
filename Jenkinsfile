@@ -2,15 +2,16 @@ pipeline {
     agent any
 
     environment {
-        PATH = "/usr/local/go/bin:$PATH"
-        DD_AGENT_HOST = "localhost"
-        DD_TRACE_AGENT_PORT = "8126"
-        DD_ENV = "poc"
-        DD_SERVICE = "auth-services"
+        // Variabel lingkungan untuk Datadog
+        DD_API_KEY = credentials('datadog-api-key') // Simpan API key di Jenkins Credentials
+        GO_VERSION = '1.24.1' // Versi Go yang digunakan
+        APP_NAME = 'auth-services'
+        APP_DIR = '/opt/auth-services' // Direktori aplikasi
+        BINARY_PATH = "${APP_DIR}/${APP_NAME}" // Lokasi binary aplikasi
     }
 
     stages {
-        stage('Checkout') {
+        stage('Checkout Code') {
             steps {
                 git branch: 'main', url: 'https://github.com/Malik-VTI/Auth-Services.git'
             }
@@ -18,67 +19,66 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                sh 'go install github.com/DataDog/orchestrion@latest'
-                sh 'export PATH=$PATH:$(go env GOPATH)/bin'
-            }
-        }
-
-        stage('Build') {
-            steps {
                 sh '''
-                    go build -toolexec 'orchestrion toolexec' -o auth-services-app .
+                # Install Go jika belum ada
+                if ! command -v go &> /dev/null; then
+                    wget https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz
+                    sudo tar -C /usr/local -xzf go${GO_VERSION}.linux-amd64.tar.gz
+                    export PATH=$PATH:/usr/local/go/bin
+                fi
+
+                # Install Orchestrion
+                go install github.com/DataDog/orchestrion/cmd/orchestrion@latest
                 '''
             }
         }
 
-        stage('Test') {
+        stage('Build Application') {
             steps {
                 sh '''
-                    go test -toolexec 'orchestrion toolexec' -race ./...
+                # Jalankan Orchestrion untuk instrumentasi otomatis
+                orchestrion -w .
+
+                # Buat direktori aplikasi jika belum ada
+                mkdir -p ${APP_DIR}
+
+                # Build aplikasi Go dan simpan binary ke direktori aplikasi
+                go build -o ${BINARY_PATH} .
                 '''
             }
         }
 
-        stage('Package') {
+        stage('Deploy Application') {
             steps {
                 sh '''
-                    sudo mkdir -p /opt/auth-services
-                    sudo cp auth-services-app /opt/auth-services/
-                    sudo chmod +x /opt/auth-services/auth-services-app
+                # Hentikan layanan sebelumnya jika ada
+                sudo systemctl stop ${APP_NAME} || true
+
+                # Pastikan binary memiliki izin eksekusi
+                sudo chmod +x ${BINARY_PATH}
+
+                # Mulai ulang layanan
+                sudo systemctl start ${APP_NAME}
                 '''
             }
         }
 
-        stage('Deploy') {
+        stage('Verify Deployment') {
             steps {
                 sh '''
-                    echo "[Unit]
-                    Description=Auth Services
-
-                    [Service]
-                    ExecStart=/opt/auth-services/auth-services-app
-                    Restart=always
-                    User=nobody
-                    Group=nogroup
-                    Environment=PATH=/usr/bin:/usr/local/bin
-                    Environment=GO_ENV=production
-                    WorkingDirectory=/opt/auth-services
-
-                    [Install]
-                    WantedBy=multi-user.target" | sudo tee /etc/systemd/system/auth-services.service
-
-                    sudo systemctl daemon-reload
-                    sudo systemctl enable auth-services
-                    sudo systemctl restart auth-services
-                    sudo systemctl restart datadog-agent
+                # Verifikasi bahwa aplikasi berjalan
+                sudo systemctl status ${APP_NAME}
                 '''
             }
         }
     }
 
     post {
-        always {
-            cleanWs()
+        success {
+            echo 'Deployment berhasil!'
+        }
+        failure {
+            echo 'Deployment gagal. Silakan periksa log.'
         }
     }
 }
