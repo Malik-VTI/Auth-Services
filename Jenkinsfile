@@ -15,18 +15,13 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Install Orchestrion') {
             steps {
                 sh '''
-                # Install Go jika belum ada
-                if ! command -v go &> /dev/null; then
-                    wget https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz
-                    sudo tar -C /usr/local -xzf go${GO_VERSION}.linux-amd64.tar.gz
-                    export PATH=$PATH:/usr/local/go/bin
+                # Install Orchestrion jika belum ada
+                if ! command -v orchestrion &> /dev/null; then
+                    go install github.com/DataDog/orchestrion/cmd/orchestrion@latest
                 fi
-
-                # Install Orchestrion
-                go install github.com/DataDog/orchestrion/cmd/orchestrion@latest
                 '''
             }
         }
@@ -79,4 +74,5 @@ pipeline {
             echo 'Deployment gagal. Silakan periksa log.'
         }
     }
+
 }
