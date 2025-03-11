@@ -19,6 +19,7 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 sh 'go install github.com/DataDog/orchestrion@latest'
+                sh 'export PATH=$PATH:$(go env GOPATH)/bin'
             }
         }
 
