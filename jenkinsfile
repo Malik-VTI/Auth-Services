@@ -1,66 +1,49 @@
 pipeline {
     agent any
-
-    environment {
-        APP_NAME = 'services-authentication'
-        SERVICE_FILE = "/etc/systemd/system/${APP_NAME}.service"
-    }
-
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                git branch: 'main', url: 'https://github.com/Malik-VTI/Auth-Services.git'
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                sh '''
+                    go install github.com/DataDog/orchestrion@latest
+                    orchestrion pin
+                '''
             }
         }
 
         stage('Build') {
             steps {
-                script {
-                    sh 'go build -o ${APP_NAME}'
-                }
+                sh 'orchestrion go build -o auth-services-app .'
             }
         }
 
         stage('Test') {
             steps {
-                script {
-                    sh 'go test ./...'
-                }
+                sh 'orchestrion go test ./...'
             }
         }
 
-        stage('Deploy') {
+        stage('Package') {
             steps {
-                script {
-                    sh """
-                    sudo mv ${APP_NAME} /usr/local/bin/${APP_NAME}
-                    echo "[Unit]
-                    Description=${APP_NAME} service
-
-                    [Service]
-                    ExecStart=/usr/local/bin/${APP_NAME}
-                    Restart=always
-                    User=nobody
-                    Group=nogroup
-                    Environment=PATH=/usr/bin:/usr/local/bin
-                    Environment=GO_ENV=production
-                    WorkingDirectory=/usr/local/bin
-
-                    [Install]
-                    WantedBy=multi-user.target" | sudo tee ${SERVICE_FILE}
-
-                    sudo systemctl daemon-reload
-                    sudo systemctl enable ${APP_NAME}
-                    sudo systemctl start ${APP_NAME}
-                    """
-                }
+                sh '''
+                    sudo mkdir -p /opt/auth-services
+                    sudo cp auth-services-app /opt/auth-services/
+                    sudo chmod +x /opt/auth-services/auth-services-app
+                '''
             }
         }
-    }
 
-    post {
-        always {
-            cleanWs()
+        stage('Restart Application') {
+            steps {
+                sh '''
+                    echo "P@ssw0rd" | sudo -S systemctl restart auth-services.service
+                '''
+            }
         }
     }
 }
