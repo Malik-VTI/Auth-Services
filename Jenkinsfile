@@ -2,8 +2,6 @@ pipeline {
     agent any
 
     environment {
-        // Variabel lingkungan untuk Datadog
-        DD_API_KEY = credentials('datadog-api-key') // Simpan API key di Jenkins Credentials
         GO_VERSION = '1.24.1' // Versi Go yang digunakan
         APP_NAME = 'auth-services'
         APP_DIR = '/opt/auth-services' // Direktori aplikasi
