@@ -21,7 +21,7 @@ pipeline {
         stage('Build') {
             steps {
                 sh '''
-                    orchestrion go build .
+                    go build -toolexec 'orchestrion toolexec' .
                 '''
             }
         }
@@ -29,7 +29,7 @@ pipeline {
         stage('Test') {
             steps {
                 sh '''
-                    orchestrion go test ./...
+                    go test -toolexec 'orchestrion toolexec' -race .
                 '''
             }
         }
