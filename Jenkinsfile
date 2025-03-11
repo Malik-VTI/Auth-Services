@@ -20,13 +20,13 @@ pipeline {
 
         stage('Build') {
             steps {
-                sh 'orchestrion go build -o auth-services-app .'
+                sh 'go build -toolexec 'orchestrion toolexec' .'
             }
         }
 
         stage('Test') {
             steps {
-                sh 'orchestrion go test ./...'
+                sh 'go test -toolexec 'orchestrion toolexec' -race .'
             }
         }
 
