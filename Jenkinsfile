@@ -46,13 +46,4 @@ pipeline {
             }
         }
     }
-<<<<<<< HEAD:jenkinsfile
-=======
-
-    post {
-        always {
-            cleanWs()
-        }
-    }
->>>>>>> f6e952a3a7823521985c400c138c77f41bddf5b9:Jenkinsfile
 }
