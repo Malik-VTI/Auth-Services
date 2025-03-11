@@ -2,7 +2,11 @@ pipeline {
     agent any
 
     environment {
-    PATH = "/usr/local/go/bin:$PATH"
+        PATH = "/usr/local/go/bin:$PATH"
+        DD_AGENT_HOST = "localhost"
+        DD_TRACE_AGENT_PORT = "8126"
+        DD_ENV = "poc"
+        DD_SERVICE = "auth-services"
     }
 
     stages {
@@ -21,7 +25,7 @@ pipeline {
         stage('Build') {
             steps {
                 sh '''
-                    go build -toolexec 'orchestrion toolexec' .
+                    go build -toolexec 'orchestrion toolexec' -o auth-services-app .
                 '''
             }
         }
@@ -29,7 +33,7 @@ pipeline {
         stage('Test') {
             steps {
                 sh '''
-                    go test -toolexec 'orchestrion toolexec' -race .
+                    go test -toolexec 'orchestrion toolexec' -race ./...
                 '''
             }
         }
@@ -44,12 +48,36 @@ pipeline {
             }
         }
 
-        stage('Restart Application') {
+        stage('Deploy') {
             steps {
                 sh '''
-                    echo "P@ssw0rd" | sudo -S systemctl restart auth-services.service
+                    echo "[Unit]
+                    Description=Auth Services
+
+                    [Service]
+                    ExecStart=/opt/auth-services/auth-services-app
+                    Restart=always
+                    User=nobody
+                    Group=nogroup
+                    Environment=PATH=/usr/bin:/usr/local/bin
+                    Environment=GO_ENV=production
+                    WorkingDirectory=/opt/auth-services
+
+                    [Install]
+                    WantedBy=multi-user.target" | sudo tee /etc/systemd/system/auth-services.service
+
+                    sudo systemctl daemon-reload
+                    sudo systemctl enable auth-services
+                    sudo systemctl restart auth-services
+                    sudo systemctl restart datadog-agent
                 '''
             }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
         }
     }
 }
