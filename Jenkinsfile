@@ -4,7 +4,7 @@ pipeline {
     environment {
     PATH = "/usr/local/go/bin:$PATH"
     }
-    
+
     stages {
         stage('Checkout') {
             steps {
@@ -14,10 +14,7 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                sh '''
-                    go install github.com/DataDog/orchestrion@latest
-                    orchestrion pin
-                '''
+                sh 'go install github.com/DataDog/orchestrion@latest'
             }
         }
 
