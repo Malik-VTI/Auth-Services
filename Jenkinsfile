@@ -20,13 +20,17 @@ pipeline {
 
         stage('Build') {
             steps {
-                sh 'go build -toolexec 'orchestrion toolexec' .'
+                sh '''
+                    go build -toolexec 'orchestrion toolexec' .
+                '''
             }
         }
 
         stage('Test') {
             steps {
-                sh 'go test -toolexec 'orchestrion toolexec' -race .'
+                sh '''
+                    go test -toolexec 'orchestrion toolexec' -race .
+                '''
             }
         }
 
