@@ -6,6 +6,7 @@ pipeline {
         APP_NAME = 'auth-services'
         APP_DIR = '/opt/auth-services' // Direktori aplikasi
         BINARY_PATH = "${APP_DIR}/${APP_NAME}" // Lokasi binary aplikasi
+        GOPATH = "/usr/local/go/bin:/home/malik/go/bin:${env.PATH}"
     }
 
     stages {
