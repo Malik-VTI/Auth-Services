@@ -6,7 +6,7 @@ pipeline {
         APP_NAME = 'auth-services'
         APP_DIR = '/opt/auth-services' // Direktori aplikasi
         BINARY_PATH = "${APP_DIR}/${APP_NAME}" // Lokasi binary aplikasi
-        GOPATH = "/usr/local/go/bin:/home/malik/go/bin:${env.PATH}"
+        PATH = "/usr/local/go/bin:/home/malik/go/bin:${env.PATH}"
     }
 
     stages {
@@ -16,16 +16,16 @@ pipeline {
             }
         }
 
-        // stage('Install Orchestrion') {
-        //     steps {
-        //         sh '''
-        //         # Install Orchestrion jika belum ada
-        //         if ! command -v orchestrion &> /dev/null; then
-        //             go install github.com/DataDog/orchestrion/cmd/orchestrion@latest
-        //         fi
-        //         '''
-        //     }
-        // }
+        stage('Install Orchestrion') {
+            steps {
+                sh '''
+                # Install Orchestrion jika belum ada
+                if ! command -v orchestrion &> /dev/null; then
+                    go install github.com/DataDog/orchestrion/cmd/orchestrion@latest
+                fi
+                '''
+            }
+        }
 
         stage('Build Application') {
             steps {
