@@ -16,16 +16,16 @@ pipeline {
             }
         }
 
-        stage('Install Orchestrion') {
-            steps {
-                sh '''
-                # Install Orchestrion jika belum ada
-                if ! command -v orchestrion &> /dev/null; then
-                    go install github.com/DataDog/orchestrion/cmd/orchestrion@latest
-                fi
-                '''
-            }
-        }
+        // stage('Install Orchestrion') {
+        //     steps {
+        //         sh '''
+        //         # Install Orchestrion jika belum ada
+        //         if ! command -v orchestrion &> /dev/null; then
+        //             go install github.com/DataDog/orchestrion/cmd/orchestrion@latest
+        //         fi
+        //         '''
+        //     }
+        // }
 
         stage('Build Application') {
             steps {
