@@ -10,14 +10,10 @@ pipeline {
 
     stages {
         stage('Build') {
-            agent {
-                docker {
-                    image 'golang:1.24.1'
-                }
-            }
             steps {
                 script {
                     sh '''
+                        go version || (echo "Go is not installed" && exit 1)
                         apt-get update && apt-get install -y orchestrion
                         orchestrion go build -o ${BINARY_NAME} .
                     '''
@@ -27,11 +23,6 @@ pipeline {
         }
 
         stage('Test') {
-            agent {
-                docker {
-                    image 'golang:1.24.1'
-                }
-            }
             steps {
                 script {
                     sh '''
