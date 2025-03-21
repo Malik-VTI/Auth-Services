@@ -6,7 +6,7 @@ pipeline {
         BINARY_NAME = 'auth-services'
         SYSTEMD_SERVICE_NAME = 'services-auth.service'
         DEPLOY_PATH = '/opt/auth-services'
-        PATH = '/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+        PATH = '/usr/local/go/bin'
     }
 
     stages {
@@ -16,7 +16,8 @@ pipeline {
                     sh '''
                     #!/bin/bash
                         go version || (echo "Go is not installed" && exit 1)
-                        apt-get update && apt-get install -y orchestrion
+                        go install github.com/DataDog/orchestrion@latest
+                        orchestrion pin
                         orchestrion go build -o ${BINARY_NAME} .
                     '''
                 }
