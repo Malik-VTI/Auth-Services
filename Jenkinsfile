@@ -10,25 +10,17 @@ pipeline {
     }
 
     stages {
-        stage('Download Dependency'){
+        stage('Go Version') {
             steps {
                 script {
-                    sh '''
-                        #!/bin/bash
-                        go version || (echo "Go is not installed" && exit 1)
-                        go install github.com/DataDog/orchestrion@latest
-                        orchestrion pin
-                    '''
+                    sh 'go version || (echo "Go is not installed" && exit 1)'
                 }
             }
         }
         stage('Build') {
             steps {
                 script {
-                    sh '''
-                        #!/bin/bash
-                        orchestrion go build -o ${BINARY_NAME} .
-                    '''
+                    sh 'orchestrion go build -o ${BINARY_NAME} .'
                 }
                 archiveArtifacts artifacts: "${BINARY_NAME}", fingerprint: true
             }
@@ -37,10 +29,7 @@ pipeline {
         stage('Test') {
             steps {
                 script {
-                    sh '''
-                        apt-get update && apt-get install -y orchestrion
-                        orchestrion go test ./...
-                    '''
+                    sh 'orchestrion go test ./...'
                 }
             }
         }
