@@ -13,9 +13,24 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+var jsonHandler = slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
+	Level: slog.LevelInfo,
+})
+
+var myslog = slog.New(jsonHandler)
+
 func Register(c echo.Context) error {
-	jsonHandler := slog.NewJSONHandler(os.Stderr, nil)
-	myslog := slog.New(jsonHandler)
+
+	traceID := c.Request().Header.Get("X-Trace-ID")
+	if traceID == "" {
+		traceID = "no-trace-id"
+	}
+
+	logger := myslog.With(
+		slog.String("trace_id", traceID),
+		slog.String("http_method", c.Request().Method),
+		slog.String("http_path", c.Path()),
+	)
 
 	var body struct {
 		Username string
@@ -25,7 +40,10 @@ func Register(c echo.Context) error {
 	}
 
 	if err := c.Bind(&body); err != nil {
-		myslog.Error("Invalid request body")
+		logger.Error("Invalid request body",
+			slog.String("error", err.Error()),
+			slog.Any("request_body", body),
+		)
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"message": "Invalid request body",
 		})
@@ -33,7 +51,9 @@ func Register(c echo.Context) error {
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.DefaultCost)
 	if err != nil {
-		myslog.Error("Failed to generate password")
+		logger.Error("Failed to generate password",
+			slog.String("error", err.Error()),
+		)
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"message": "Failed to generate password",
 		})
@@ -47,21 +67,43 @@ func Register(c echo.Context) error {
 	}
 	result := config.DB.Create(&newUser)
 	if result.Error != nil {
-		myslog.Error("Failed to create user")
+		logger.Error("Failed to create user",
+			slog.String("error", result.Error.Error()),
+			slog.Any("user_data", map[string]interface{}{
+				"username": body.Username,
+				"email":    body.Email,
+				"company":  body.Company,
+			}),
+		)
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"message": "Failed to create user",
 		})
 	}
 
-	myslog.Info("User created")
+	logger.Info("User Created",
+		slog.Any("user_data", map[string]interface{}{
+			"username": body.Username,
+			"email":    body.Email,
+			"company":  body.Company,
+		}),
+	)
 	return c.JSON(http.StatusCreated, map[string]string{
 		"message": "User created",
 	})
 }
 
 func Login(c echo.Context) error {
-	jsonHandler := slog.NewJSONHandler(os.Stderr, nil)
-	myslog := slog.New(jsonHandler)
+
+	traceID := c.Request().Header.Get("X-Trace-ID")
+	if traceID == "" {
+		traceID = "no-trace-id"
+	}
+
+	logger := myslog.With(
+		slog.String("trace_id", traceID),
+		slog.String("http_method", c.Request().Method),
+		slog.String("http_path", c.Path()),
+	)
 
 	var body struct {
 		Account  string
@@ -69,7 +111,10 @@ func Login(c echo.Context) error {
 	}
 
 	if err := c.Bind(&body); err != nil {
-		myslog.Error("Invalid request body")
+		logger.Error("Invalid request body",
+			slog.String("error", err.Error()),
+			slog.Any("request_body", body),
+		)
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"error": "Invalid request body",
 		})
@@ -79,7 +124,9 @@ func Login(c echo.Context) error {
 	config.DB.First(&user, "username = ? OR email = ?", body.Account, body.Account)
 
 	if user.ID == 0 {
-		myslog.Error("User not found")
+		logger.Error("User not found",
+			slog.String("account", body.Account),
+		)
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"error": "User not found",
 		})
@@ -87,7 +134,9 @@ func Login(c echo.Context) error {
 
 	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password))
 	if err != nil {
-		myslog.Error("Invalid password")
+		logger.Error("Invalid password",
+			slog.String("error", err.Error()),
+		)
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"error": "Invalid password",
 		})
@@ -102,7 +151,9 @@ func Login(c echo.Context) error {
 
 	tokenString, err := token.SignedString([]byte("secret"))
 	if err != nil {
-		myslog.Error("Failed to generate token")
+		logger.Error("Failed to generate token",
+			slog.String("error", err.Error()),
+		)
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"error": "Failed to generate token",
 		})
@@ -115,17 +166,27 @@ func Login(c echo.Context) error {
 	cookie.SameSite = http.SameSiteLaxMode
 	c.SetCookie(cookie)
 
-	myslog.Info("Login success")
+	logger.Info("Login success",
+		slog.String("username", user.Username),
+	)
 	return c.JSON(http.StatusOK, map[string]string{
 		"message": "Login success",
 	})
 }
 
 func Home(c echo.Context) error {
-	jsonHandler := slog.NewJSONHandler(os.Stderr, nil)
-	myslog := slog.New(jsonHandler)
+	traceID := c.Request().Header.Get("X-Trace-ID")
+	if traceID == "" {
+		traceID = "no-trace-id"
+	}
 
-	myslog.Info("Home page accessed")
+	logger := myslog.With(
+		slog.String("trace_id", traceID),
+		slog.String("http_method", c.Request().Method),
+		slog.String("http_path", c.Path()),
+	)
+
+	logger.Info("Home accessed")
 	return c.JSON(http.StatusOK, map[string]string{
 		"message": "Home",
 	})

@@ -2,78 +2,64 @@ pipeline {
     agent any
 
     environment {
-        GO_VERSION = '1.24.1' // Versi Go yang digunakan
-        APP_NAME = 'auth-services'
-        APP_DIR = '/opt/auth-services' // Direktori aplikasi
-        BINARY_PATH = "${APP_DIR}/${APP_NAME}" // Lokasi binary aplikasi
-        PATH = "/usr/local/go/bin:/home/malik/go/bin:${env.PATH}"
+        APP_NAME = 'services-auth'
+        BINARY_NAME = 'auth-services'
+        SYSTEMD_SERVICE_NAME = 'services-auth.service'
+        DEPLOY_PATH = '/opt/auth-services'
     }
 
     stages {
-        stage('Checkout Code') {
+        stage('Build') {
+            agent {
+                docker {
+                    image 'golang:1.24.1'
+                }
+            }
             steps {
-                git branch: 'main', url: 'https://github.com/Malik-VTI/Auth-Services.git'
+                script {
+                    sh '''
+                        apt-get update && apt-get install -y orchestrion
+                        orchestrion go build -o ${BINARY_NAME} .
+                    '''
+                }
+                archiveArtifacts artifacts: "${BINARY_NAME}", fingerprint: true
             }
         }
 
-        // stage('Install Orchestrion') {
-        //     steps {
-        //         sh '''
-        //         # Install Orchestrion jika belum ada
-        //         if ! command -v orchestrion &> /dev/null; then
-        //             go install github.com/DataDog/orchestrion/cmd/orchestrion@latest
-        //         fi
-        //         '''
-        //     }
-        // }
-
-        stage('Build Application') {
+        stage('Test') {
+            agent {
+                docker {
+                    image 'golang:1.24.1'
+                }
+            }
             steps {
-                sh '''
-                # Jalankan Orchestrion untuk instrumentasi otomatis
-                orchestrion -w .
-
-                # Buat direktori aplikasi jika belum ada
-                mkdir -p ${APP_DIR}
-
-                # Build aplikasi Go dan simpan binary ke direktori aplikasi
-                go build -o ${BINARY_PATH} .
-                '''
+                script {
+                    sh '''
+                        apt-get update && apt-get install -y orchestrion
+                        orchestrion go test ./...
+                    '''
+                }
             }
         }
 
-        stage('Deploy Application') {
+        stage('Deploy') {
+            agent any
             steps {
-                sh '''
-                # Hentikan layanan sebelumnya jika ada
-                sudo systemctl stop ${APP_NAME} || true
+                script {
+                    // Pindahkan binary ke lokasi deploy
+                    sh """
+                        mkdir -p ${DEPLOY_PATH}
+                        cp ${WORKSPACE}/${BINARY_NAME} ${DEPLOY_PATH}/${APP_NAME}
+                        chmod +x ${DEPLOY_PATH}/${APP_NAME}
 
-                # Pastikan binary memiliki izin eksekusi
-                sudo chmod +x ${BINARY_PATH}
-
-                # Mulai ulang layanan
-                sudo systemctl start ${APP_NAME}
-                '''
-            }
-        }
-
-        stage('Verify Deployment') {
-            steps {
-                sh '''
-                # Verifikasi bahwa aplikasi berjalan
-                sudo systemctl status ${APP_NAME}
-                '''
+                        // Konfigurasi dan restart systemd service
+                        sudo systemctl stop ${SYSTEMD_SERVICE_NAME} || true
+                        sudo systemctl daemon-reload
+                        sudo systemctl start ${SYSTEMD_SERVICE_NAME}
+                        sudo systemctl enable ${SYSTEMD_SERVICE_NAME}
+                    """
+                }
             }
         }
     }
-
-    post {
-        success {
-            echo 'Deployment berhasil!'
-        }
-        failure {
-            echo 'Deployment gagal. Silakan periksa log.'
-        }
-    }
-
 }
