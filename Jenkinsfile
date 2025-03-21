@@ -10,14 +10,23 @@ pipeline {
     }
 
     stages {
+        stage('Download Dependency'){
+            steps {
+                script {
+                    sh '''
+                        #!/bin/bash
+                        go version || (echo "Go is not installed" && exit 1)
+                        go install github.com/DataDog/orchestrion@latest
+                        orchestrion pin
+                    '''
+                }
+            }
+        }
         stage('Build') {
             steps {
                 script {
                     sh '''
-                    #!/bin/bash
-                        go version || (echo "Go is not installed" && exit 1)
-                        go install github.com/DataDog/orchestrion@latest
-                        orchestrion pin
+                        #!/bin/bash
                         orchestrion go build -o ${BINARY_NAME} .
                     '''
                 }
