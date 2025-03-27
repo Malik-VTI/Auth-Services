@@ -20,6 +20,8 @@ pipeline {
             steps {
                 script {
                     sh '''
+                    go mod services-auth
+                    orchestrion pin
                     orchestrion go build . --output=auth-service
                     '''
                 }
