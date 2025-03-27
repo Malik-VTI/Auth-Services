@@ -23,19 +23,16 @@ pipeline {
                     export PATH=$PATH:/usr/local/go/bin:/home/jenkins/go/bin
                     orchestrion pin
                     orchestrion go build .
-                    sh 'cp services-auth ./docker/auth-service' // misalnya Dockerfile ada di folder ./docker
-                    sh 'docker build -t docker.io/malikvti/auth-service:1.0 -f ./docker/Dockerfile ./docker'
                     '''
                 }
             }
         }
-
         stage('Build & Push Docker Image') {
             steps {
                 withCredentials([usernamePassword(credentialsId: "${DOCKERHUB_CREDENTIAL}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     sh '''
                     echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-                    docker build -t $REGISTRY/$IMAGE_NAME:$IMAGE_TAG .
+                    docker build -t $REGISTRY/$IMAGE_NAME:$IMAGE_TAG -f ./Dockerfile .
                     docker push $REGISTRY/$IMAGE_NAME:$IMAGE_TAG
                     '''
                 }
