@@ -13,9 +13,11 @@ spec:
       labels:
         app: auth-service
     spec:
+      imagePullSecrets:
+        - name: regcred
       containers:
         - name: auth-service
-          image: docker.io/malikvti/auth-service:latest
+          image: docker.io/malikvti/auth-service:1.0
           ports:
             - containerPort: 7070
           env:
