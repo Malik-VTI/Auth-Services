@@ -22,7 +22,7 @@ pipeline {
                     sh '''
                     export PATH=$PATH:/usr/local/go/bin:/home/jenkins/go/bin
                     orchestrion pin
-                    orchestrion go build . --output=auth-service
+                    orchestrion go build .
                     '''
                 }
             }
