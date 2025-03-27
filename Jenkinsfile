@@ -2,54 +2,51 @@ pipeline {
     agent any
 
     environment {
-        APP_NAME = 'services-auth'
-        BINARY_NAME = 'auth-services'
-        SYSTEMD_SERVICE_NAME = 'services-auth.service'
-        DEPLOY_PATH = '/opt/auth-services'
-        PATH = '/usr/local/go/bin'
+        REGISTRY = "docker.io/malikvti"
+        IMAGE_NAME = "auth-service"
+        IMAGE_TAG = "1.0"
+        KUBECONFIG_CREDENTIAL = 'kubeconfig' // ID credential di Jenkins
+        DOCKERHUB_CREDENTIAL = 'dockerhub-credential' // ID credential DockerHub
     }
 
     stages {
-        stage('Go Version') {
+        stage('Checkout Code') {
             steps {
-                script {
-                    sh 'go version || (echo "Go is not installed" && exit 1)'
-                }
-            }
-        }
-        stage('Build') {
-            steps {
-                script {
-                    sh 'orchestrion go build -o ${BINARY_NAME} .'
-                }
-                archiveArtifacts artifacts: "${BINARY_NAME}", fingerprint: true
+                git branch: 'main', url: 'https://github.com/Malik-VTI/Auth-Services.git'
             }
         }
 
-        stage('Test') {
+        stage('Build with Orchestrator') {
             steps {
                 script {
-                    sh 'orchestrion go test ./...'
+                    sh '''
+                    orchestrator build . --output=auth-service
+                    '''
                 }
             }
         }
 
-        stage('Deploy') {
-            agent any
+        stage('Build & Push Docker Image') {
             steps {
-                script {
-                    // Pindahkan binary ke lokasi deploy
-                    sh """
-                        mkdir -p ${DEPLOY_PATH}
-                        cp ${WORKSPACE}/${BINARY_NAME} ${DEPLOY_PATH}/${APP_NAME}
-                        chmod +x ${DEPLOY_PATH}/${APP_NAME}
+                withCredentials([usernamePassword(credentialsId: "${DOCKERHUB_CREDENTIAL}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh '''
+                    echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                    docker build -t $REGISTRY/$IMAGE_NAME:$IMAGE_TAG .
+                    docker push $REGISTRY/$IMAGE_NAME:$IMAGE_TAG
+                    '''
+                }
+            }
+        }
 
-                        // Konfigurasi dan restart systemd service
-                        sudo systemctl stop ${SYSTEMD_SERVICE_NAME} || true
-                        sudo systemctl daemon-reload
-                        sudo systemctl start ${SYSTEMD_SERVICE_NAME}
-                        sudo systemctl enable ${SYSTEMD_SERVICE_NAME}
-                    """
+        stage('Deploy to Kubernetes') {
+            steps {
+                withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
+                    sh '''
+                    kubectl apply -f k8s/configmap.yaml
+                    kubectl apply -f k8s/secret.yaml
+                    kubectl apply -f k8s/deployment.yaml
+                    kubectl apply -f k8s/service.yaml
+                    '''
                 }
             }
         }

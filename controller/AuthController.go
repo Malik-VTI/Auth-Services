@@ -64,7 +64,7 @@ func Register(c echo.Context) error {
 		Email:    body.Email,
 		Password: string(hash),
 		Company:  model.Company{Name: body.Company},
-	}
+	}	
 	result := config.DB.Create(&newUser)
 	if result.Error != nil {
 		logger.Error("Failed to create user",

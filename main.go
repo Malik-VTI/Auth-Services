@@ -19,5 +19,5 @@ func main() {
 	auth.POST("/login", controller.Login)
 	auth.GET("/user", middlewares.Auth(controller.Home))
 
-	e.Logger.Fatal(e.Start(":8080"))
+	e.Logger.Fatal(e.Start(":6060"))
 }
