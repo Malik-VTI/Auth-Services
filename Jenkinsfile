@@ -23,7 +23,7 @@ pipeline {
                     export PATH=$PATH:/usr/local/go/bin:/home/jenkins/go/bin
                     orchestrion pin
                     orchestrion go build .
-                    sh 'cp services-auth ./docker/' // misalnya Dockerfile ada di folder ./docker
+                    sh 'cp services-auth ./docker/auth-service' // misalnya Dockerfile ada di folder ./docker
                     sh 'docker build -t docker.io/malikvti/auth-service:1.0 -f ./docker/Dockerfile ./docker'
                     '''
                 }
