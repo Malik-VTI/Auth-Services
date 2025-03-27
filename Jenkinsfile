@@ -20,6 +20,7 @@ pipeline {
             steps {
                 script {
                     sh '''
+                    export PATH=$PATH:/usr/local/go/bin:/home/jenkins/go/bin
                     go mod services-auth
                     orchestrion pin
                     orchestrion go build . --output=auth-service
