@@ -20,7 +20,7 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    orchestrator build . --output=auth-service
+                    orchestrion build . --output=auth-service
                     '''
                 }
             }
