@@ -19,8 +19,10 @@ spec:
         - name: auth-service
           image: docker.io/malikvti/auth-service:1.0
           ports:
-            - containerPort: 7070
+            - containerPort: 9090
           env:
+            - name: PORT
+              value: "9090"
             - name: DD_AGENT_HOST
               value: "datadog-agent.default.svc.cluster.local"
             - name: DD_TRACE_AGENT_PORT
@@ -32,7 +34,7 @@ spec:
             - name: DD_ENV
               value: "production"
             - name: DD_VERSION
-              value: "1.0"
+              value: "1.1"
             - name: PROFILING_ENABLED
               value: "true"
             - name: DD_APPPSEC_ENABLED

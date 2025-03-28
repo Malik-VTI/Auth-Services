@@ -4,7 +4,7 @@ pipeline {
     environment {
         REGISTRY = "docker.io/malikvti"
         IMAGE_NAME = "auth-service"
-        IMAGE_TAG = "1.3"
+        IMAGE_TAG = "1.4"
         KUBECONFIG_CREDENTIAL = 'kubeconfig' // ID credential di Jenkins
         DOCKERHUB_CREDENTIAL = 'dockerhub-credential' // ID credential DockerHub
     }
