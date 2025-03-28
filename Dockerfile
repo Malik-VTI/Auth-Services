@@ -8,4 +8,4 @@ COPY services-auth .
 # Expose port kalau perlu
 EXPOSE 7070
 
-CMD ["./auth-service"]
+CMD ["./services-auth"]
