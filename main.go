@@ -13,11 +13,11 @@ func main() {
 	e := echo.New()
 	config.DatabaseInit()
 
-	auth := e.Group("api/v1/auth")
+	auth := e.Group("/api/v1/auth")
 
 	auth.POST("/register", controller.Register)
 	auth.POST("/login", controller.Login)
 	auth.GET("/user", middlewares.Auth(controller.Home))
 
-	e.Logger.Fatal(e.Start(":7070"))
+	e.Logger.Fatal(e.Start(":9090"))
 }
