@@ -8,8 +8,8 @@ spec:
   selector:
     app: auth-service
   ports:
-    - protocol: TCP
-      port: 80
-      targetPort: 9090
-      nodePort: 30000
+    # - protocol: TCP
+    port: 80
+    targetPort: 9090
+    nodePort: 31000
   type: NodePort
