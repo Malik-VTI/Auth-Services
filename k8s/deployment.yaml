@@ -34,7 +34,7 @@ spec:
             - name: DD_ENV
               value: "production"
             - name: DD_VERSION
-              value: "1.1"
+              value: "1.2"
             - name: PROFILING_ENABLED
               value: "true"
             - name: DD_APPPSEC_ENABLED
